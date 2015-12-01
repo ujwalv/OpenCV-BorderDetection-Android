@@ -35,8 +35,13 @@ import org.opencv.utils.Converters;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class CamScanner extends Activity implements View.OnClickListener{
 
@@ -331,6 +336,19 @@ public class CamScanner extends Activity implements View.OnClickListener{
                         double[] tempDouble3 = approxCurve2.get(2,0);
                         double[] tempDouble4 = approxCurve2.get(3,0);
 
+                        Log.e(TAG, "\n1)" + tempDouble1[0] + "  " + tempDouble1[1] +
+                                "\n2)" + tempDouble2[0] + "  " + tempDouble2[1] +
+                                "\n3)" + tempDouble3[0] + "  " + tempDouble3[1] +
+                                "\n4)" + tempDouble4[0] + "  " + tempDouble4[1]);
+
+                        List<double[]> sortedIt = findAndSortPositions(tempDouble1, tempDouble2, tempDouble3, tempDouble4);
+
+                        tempDouble1 = sortedIt.get(0);
+                        tempDouble2 = sortedIt.get(1);
+                        tempDouble3 = sortedIt.get(2);
+                        tempDouble4 = sortedIt.get(3);
+
+
                         Point p1=new Point();
                         Point p2=new Point();
                         Point p3=new Point();
@@ -361,8 +379,8 @@ public class CamScanner extends Activity implements View.OnClickListener{
 
 
                         //To print circle on the canny image
-                /*Imgproc.circle(tempMat, p1, 300, new Scalar(255, 255, 255));
-                Imgproc.circle(tempMat, p2, 300, new Scalar(255, 255, 255));
+                Imgproc.circle(tempMat, p1, 300, new Scalar(255, 255, 255));
+               /* Imgproc.circle(tempMat, p2, 300, new Scalar(255, 255, 255));
                 Imgproc.circle(tempMat, p3, 300, new Scalar(255, 255, 255));
                 Imgproc.circle(tempMat, p4, 300, new Scalar(255, 255, 255));*/
                         List<Point> source = new ArrayList<>();
@@ -397,7 +415,6 @@ public class CamScanner extends Activity implements View.OnClickListener{
                         in1.putExtra("image", tempUri.toString());
                         startActivity(in1);
                         tempBitmap.recycle();
-
                         super.onPostExecute(aVoid);
                     }
                 }.execute();
@@ -505,6 +522,92 @@ public class CamScanner extends Activity implements View.OnClickListener{
 
         //tempBitmap.recycle();
 
+    }
+
+    /**
+     *
+     * @param tempDouble1
+     * @param tempDouble2
+     * @param tempDouble3
+     * @param tempDouble4
+     *
+     * This method sorts and returns values to be placed in proper order
+     */
+    private List findAndSortPositions(double[] tempDouble1, double[] tempDouble2, double[] tempDouble3, double[] tempDouble4) {
+        double TL,TR,BL,BR;
+
+
+        Map<Double,Double> left = new TreeMap<>();
+        left.put(tempDouble1[0],tempDouble1[1]);
+        left.put(tempDouble2[0],tempDouble2[1]);
+        left.put(tempDouble3[0], tempDouble3[1]);
+        left.put(tempDouble4[0], tempDouble4[1]);
+
+
+
+        int x=0;
+        double[] widthTemp = new double[left.size()];
+        double[] heightTemp = new double[left.size()];
+        for(Map.Entry<Double,Double> entry: left.entrySet()){
+            widthTemp[x] = entry.getKey();
+            heightTemp[x] = entry.getValue();
+            x++;
+        }
+
+
+        Map<Double,Double> top = new TreeMap<>();
+        top.put(heightTemp[0],widthTemp[0]);
+        top.put(heightTemp[1],widthTemp[1]);
+
+        double[] topLeft = new double[top.size()];
+        double[] bottomLeft = new double[top.size()];
+        int y=0;
+        for(Map.Entry<Double,Double> maps:top.entrySet()){
+            if(y==0){
+                topLeft[0] = maps.getValue();
+                topLeft[1] = maps.getKey();
+            }else if(y==1){
+                bottomLeft[0] = maps.getValue();
+                bottomLeft[1] = maps.getKey();
+            }
+            y++;
+        }
+
+
+
+
+        top.clear();
+        top.put(heightTemp[2], widthTemp[2]);
+        top.put(heightTemp[3], widthTemp[3]);
+
+        double[] topRight = new double[top.size()];
+        double[] bottomRight = new double[top.size()];
+        int z=0;
+
+        for(Map.Entry<Double,Double> maps:top.entrySet()){
+
+            if(z==0){
+                topRight[0] = maps.getValue();
+                topRight[1] = maps.getKey();
+            }else if(z==1){
+                bottomRight[0] = maps.getValue();
+                bottomRight[1] = maps.getKey();
+            }
+
+            z++;
+        }
+        List<double[]> sortedItems = new ArrayList<>();
+        sortedItems.add(topLeft);
+        sortedItems.add(bottomLeft);
+        sortedItems.add(bottomRight);
+        sortedItems.add(topRight);
+        Log.e(TAG,"After sorting");
+        Log.e(TAG, "\n1)" + topLeft[0] + "  " + topLeft[1] +
+                "\n2)" + bottomLeft[0] + "  " + bottomLeft[1] +
+                "\n3)" + bottomRight[0] + "  " + bottomRight[1] +
+                "\n4)" + topRight[0] + "  " + topRight[1]);
+
+        return sortedItems;
     }
 
     /*private Mat warp(Mat inputMat, Mat startM) {
